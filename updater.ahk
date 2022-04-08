@@ -1,4 +1,3 @@
-;Setup -->
 ;//////////////[Main Script Settings]
 KeepThisUpToDate := true
 SeemlesUpdate := true ;Dont ask before update
@@ -6,9 +5,9 @@ ThisScriptTempFileLocation = ;if empty temp location is same as Updater
 ;//////////////[Updater settings]
 FileToUpdate = 
 NewFileUrl = ""
-FileName = "app.ahk"
+FileName = ""
 FileVersionFile = ;Ini file containing version number in "update" Section and "version" key
-FileVersionSection = "update"
+FileVersionSection = "Updater"
 FileVersionKey = "version"
 VersionUrl = "" ;url file containing only version number
 ;TempFileLocation = ;if empty temp location is same as file to update folder
@@ -21,7 +20,6 @@ ErrorFileLocation =
 UseAdvancedSettings := false
 ;AdvancedUpdaterSettingsLocation = 
 ;DeleteAdvancedUpdaterSettingsFileAfterRead := true
-;Setup <--
 ;____________________________________________________________
 ;Updater Made by veskeli
 ;\/\/\/\/\/\/\/\/[Main Script]\/\/\/\/\/\/\/\/
@@ -36,9 +34,9 @@ SetTitleMatchMode, 3
 SetWorkingDir, %A_ScriptDir%
 SplitPath, A_ScriptName, , , , GameScripts
 ;//////////////[Vars]///////////////
-ThisScriptVersion = 0.2
+ThisScriptVersion = 0.3
 AppVersion = 
-SettingsFile := % A_ScriptDir . "\UpdaterSettings.ini"
+SettingsFile := % A_ScriptDir . "\Settings.ini"
 ;//////////////[Globals]///////////////
 global ThisScriptVersion
 global SettingsFile
@@ -55,9 +53,17 @@ global ShowErrorMsgbox
 global ErrorFileLocation
 global UseAdvancedSettings
 ;____________________________________________________________
+SettingsFile2 := % A_ScriptDir . "\Settings\Settings.ini"
+IfExist %SettingsFile2%
+    SettingsFile := % A_ScriptDir . "\Settings\Settings.ini"
 IfExist, SettingsFile
 {
     UpdateSettings()
+}
+else
+{  
+    ;TODO: Add error log
+    ExitApp
 }
 IfExist %A_ScriptDir%\OldUpdater.ahk
 {
@@ -189,7 +195,6 @@ UpdateUpdater()
             FileCreateDir, %ThisScriptTempFileLocation%
         FileMove, %A_ScriptFullPath%, %ThisScriptTempFileLocation%\%A_ScriptName%.ahk, 1
     }
-    SaveThisScriptSettings()
     DownloadLink := % "https://raw.githubusercontent.com/veskeli/AhkUpdater/main/updater.ahk"
     UrlDownloadToFile, %DownloadLink%, %A_ScriptFullPath%
     ExitApp
@@ -222,33 +227,16 @@ ReadFileFromLink(Link)
     }
     return TResponse
 }
-SaveThisScriptSettings()
-{
-    IniWrite, KeepThisUpToDate,%SettingsFile%,Settings,KeepThisUpToDate
-    IniWrite, ThisScriptTempFileLocation,%SettingsFile%,Settings,ThisScriptTempFileLocation
-    IniWrite, FileToUpdate,%SettingsFile%,Settings,FileToUpdate
-    IniWrite, NewFileUrl,%SettingsFile%,Settings,NewFileUrl
-    IniWrite, FileName,%SettingsFile%,Settings,FileName
-    IniWrite, FileVersionFile,%SettingsFile%,Settings,FileVersionFile
-    IniWrite, FileVersionKey,%SettingsFile%,Settings,FileVersionKey
-    IniWrite, VersionUrl,%SettingsFile%,Settings,VersionUrl
-    IniWrite, DeleteOldFile,%SettingsFile%,Settings,DeleteOldFile
-    IniWrite, ShowErrorMsgbox,%SettingsFile%,Settings,ShowErrorMsgbox
-    IniWrite, ErrorFileLocation,%SettingsFile%,Settings,ErrorFileLocation
-    IniWrite, UseAdvancedSettings,%SettingsFile%,Settings,UseAdvancedSettings
-}
 UpdateSettings()
 {
-    iniread, KeepThisUpToDate,%SettingsFile%,Settings,KeepThisUpToDate
-    iniread, ThisScriptTempFileLocation,%SettingsFile%,Settings,ThisScriptTempFileLocation
-    iniread, FileToUpdate,%SettingsFile%,Settings,FileToUpdate
-    iniread, NewFileUrl,%SettingsFile%,Settings,NewFileUrl
-    iniread, FileName,%SettingsFile%,Settings,FileName
-    iniread, FileVersionFile,%SettingsFile%,Settings,FileVersionFile
-    iniread, FileVersionKey,%SettingsFile%,Settings,FileVersionKey
-    iniread, VersionUrl,%SettingsFile%,Settings,VersionUrl
-    iniread, DeleteOldFile,%SettingsFile%,Settings,DeleteOldFile
-    iniread, ShowErrorMsgbox,%SettingsFile%,Settings,ShowErrorMsgbox
-    iniread, ErrorFileLocation,%SettingsFile%,Settings,ErrorFileLocation
-    iniread, UseAdvancedSettings,%SettingsFile%,Settings,UseAdvancedSettings
+    iniread, KeepThisUpToDate,%SettingsFile%,Updater,KeepThisUpToDate
+    iniread, SeemlesUpdate,%SettingsFile%,Updater,SeemlesUpdate
+    iniread, ThisScriptTempFileLocation,%SettingsFile%,Updater,ThisScriptTempFileLocation
+    iniread, FileToUpdate,%SettingsFile%,Updater,FileToUpdate
+    iniread, NewFileUrl,%SettingsFile%,Updater,NewFileUrl
+    iniread, VersionUrl,%SettingsFile%,Updater,VersionUrl
+    iniread, DeleteOldFile,%SettingsFile%,Updater,DeleteOldFile
+    iniread, ShowErrorMsgbox,%SettingsFile%,Updater,ShowErrorMsgbox
+    iniread, ErrorFileLocation,%SettingsFile%,Updater,ErrorFileLocation
+    iniread, UseAdvancedSettings,%SettingsFile%,Updater,UseAdvancedSettings
 }
