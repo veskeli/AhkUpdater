@@ -17,7 +17,7 @@ DeleteOldFile := true
 ShowErrorMsgbox := false
 SaveErrorsToFile := false
 ErrorFileLocation = 
-;//////////////[Advanced settings] (BranchControl)
+;//////////////[Advanced settings] (BranchControl) Not working yet
 UseAdvancedSettings := false
 ;AdvancedUpdaterSettingsLocation = 
 ;DeleteAdvancedUpdaterSettingsFileAfterRead := true
@@ -36,10 +36,12 @@ SetTitleMatchMode, 3
 SetWorkingDir, %A_ScriptDir%
 SplitPath, A_ScriptName, , , , GameScripts
 ;//////////////[Vars]///////////////
-ThisScriptVersion = 0.1
+ThisScriptVersion = 0.2
 AppVersion = 
+SettingsFile := % A_ScriptDir . "\UpdaterSettings.ini"
 ;//////////////[Globals]///////////////
 global ThisScriptVersion
+global SettingsFile
 global KeepThisUpToDate
 global ThisScriptTempFileLocation
 global FileToUpdate
@@ -53,6 +55,10 @@ global ShowErrorMsgbox
 global ErrorFileLocation
 global UseAdvancedSettings
 ;____________________________________________________________
+IfExist, SettingsFile
+{
+    UpdateSettings()
+}
 IfExist %A_ScriptDir%\OldUpdater.ahk
 {
     FileDelete, %A_ScriptDir%\OldUpdater.ahk
@@ -183,7 +189,7 @@ UpdateUpdater()
             FileCreateDir, %ThisScriptTempFileLocation%
         FileMove, %A_ScriptFullPath%, %ThisScriptTempFileLocation%\%A_ScriptName%.ahk, 1
     }
-    
+    SaveThisScriptSettings()
     DownloadLink := % "https://raw.githubusercontent.com/veskeli/AhkUpdater/main/updater.ahk"
     UrlDownloadToFile, %DownloadLink%, %A_ScriptFullPath%
     ExitApp
@@ -215,4 +221,34 @@ ReadFileFromLink(Link)
         return "ERROR"
     }
     return TResponse
+}
+SaveThisScriptSettings()
+{
+    IniWrite, KeepThisUpToDate,%SettingsFile%,Settings,KeepThisUpToDate
+    IniWrite, ThisScriptTempFileLocation,%SettingsFile%,Settings,ThisScriptTempFileLocation
+    IniWrite, FileToUpdate,%SettingsFile%,Settings,FileToUpdate
+    IniWrite, NewFileUrl,%SettingsFile%,Settings,NewFileUrl
+    IniWrite, FileName,%SettingsFile%,Settings,FileName
+    IniWrite, FileVersionFile,%SettingsFile%,Settings,FileVersionFile
+    IniWrite, FileVersionKey,%SettingsFile%,Settings,FileVersionKey
+    IniWrite, VersionUrl,%SettingsFile%,Settings,VersionUrl
+    IniWrite, DeleteOldFile,%SettingsFile%,Settings,DeleteOldFile
+    IniWrite, ShowErrorMsgbox,%SettingsFile%,Settings,ShowErrorMsgbox
+    IniWrite, ErrorFileLocation,%SettingsFile%,Settings,ErrorFileLocation
+    IniWrite, UseAdvancedSettings,%SettingsFile%,Settings,UseAdvancedSettings
+}
+UpdateSettings()
+{
+    iniread, KeepThisUpToDate,%SettingsFile%,Settings,KeepThisUpToDate
+    iniread, ThisScriptTempFileLocation,%SettingsFile%,Settings,ThisScriptTempFileLocation
+    iniread, FileToUpdate,%SettingsFile%,Settings,FileToUpdate
+    iniread, NewFileUrl,%SettingsFile%,Settings,NewFileUrl
+    iniread, FileName,%SettingsFile%,Settings,FileName
+    iniread, FileVersionFile,%SettingsFile%,Settings,FileVersionFile
+    iniread, FileVersionKey,%SettingsFile%,Settings,FileVersionKey
+    iniread, VersionUrl,%SettingsFile%,Settings,VersionUrl
+    iniread, DeleteOldFile,%SettingsFile%,Settings,DeleteOldFile
+    iniread, ShowErrorMsgbox,%SettingsFile%,Settings,ShowErrorMsgbox
+    iniread, ErrorFileLocation,%SettingsFile%,Settings,ErrorFileLocation
+    iniread, UseAdvancedSettings,%SettingsFile%,Settings,UseAdvancedSettings
 }

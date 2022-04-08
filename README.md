@@ -1,5 +1,5 @@
-# Ahk Updater By Veskeli
 # CURRENTLY ALPHA!
+# Ahk Updater By Veskeli
 ## Installing guide
 1. Download AutoHotkey from "https://www.autohotkey.com/"
 
