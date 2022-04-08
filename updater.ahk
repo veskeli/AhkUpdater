@@ -16,6 +16,7 @@ DeleteOldFile := true
 ShowErrorMsgbox := false
 SaveErrorsToFile := false
 ErrorFileLocation = 
+DebugLog = false
 ;//////////////[Advanced settings] (BranchControl) Not working yet
 UseAdvancedSettings := false
 ;AdvancedUpdaterSettingsLocation = 
@@ -34,7 +35,7 @@ SetTitleMatchMode, 3
 SetWorkingDir, %A_ScriptDir%
 SplitPath, A_ScriptName, , , , GameScripts
 ;//////////////[Vars]///////////////
-ThisScriptVersion = 0.3
+ThisScriptVersion = 0.4
 AppVersion = 
 SettingsFile := % A_ScriptDir . "\Settings.ini"
 ;//////////////[Globals]///////////////
@@ -52,11 +53,16 @@ global DeleteOldFile
 global ShowErrorMsgbox
 global ErrorFileLocation
 global UseAdvancedSettings
+global DebugLog
 ;____________________________________________________________
 SettingsFile2 := % A_ScriptDir . "\Settings\Settings.ini"
 IfExist %SettingsFile2%
+{
     SettingsFile := % A_ScriptDir . "\Settings\Settings.ini"
-IfExist, SettingsFile
+}
+if(DebugLog)
+    msgbox,%SettingsFile%
+IfExist %SettingsFile%
 {
     UpdateSettings()
 }
@@ -67,32 +73,33 @@ else
 }
 IfExist %A_ScriptDir%\OldUpdater.ahk
 {
+    if(DebugLog)
+        msgbox,"Found old updater file"
     FileDelete, %A_ScriptDir%\OldUpdater.ahk
 }
-if(UseAdvancedSettings) ;//////////////[Advanced update]
+if(DebugLog)
+    msgbox,"SimpleUpdate"
+SimpleUpdate()
+if(DebugLog)
+    msgbox,% "KeepThisUpToDate: " . KeepThisUpToDate
+if(KeepThisUpToDate)
 {
-    IfNotExist %AdvancedUpdaterSettingsLocation%
+    UpdaterDownloadLink := % "https://raw.githubusercontent.com/veskeli/AhkUpdater/main/version.txt"
+    newversion := GetNewVersionFromURL(UpdaterDownloadLink)
+    if(newversion == "ERROR")
     {
-        ;No Updater Advanced Settings
-        ;TODO: Add error log
+        if(DebugLog)
+            msgbox, new version == ERROR
         ExitApp
     }
-    iniread,version,%AppUpdaterSettingsFile%,Options,Version
-    iniread,MainScriptFile,%AppUpdaterSettingsFile%,Options,ScriptFullPath
-    iniread,MainScriptBranch,%AppUpdaterSettingsFile%,Options,Branch
-    global version
-    global MainScriptFile
-    global MainScriptBranch
-    if(DeleteAdvancedUpdaterSettingsFileAfterRead)
-        FileDelete,%AppUpdaterSettingsFile%
-    ;update 
+        
+    if(newversion > ThisScriptVersion)
+    {
+        if(DebugLog)
+            msgbox, Starting update
+        UpdateUpdater()
+    } 
 }
-else ;//////////////[Simple Update]
-{
-    SimpleUpdate()
-}
-if(KeepThisUpToDate)
-    CheckForUpdaterUpdates()
 ExitApp
 ;____________________________________________________________
 ;//////////////[Functions]///////////////
@@ -106,6 +113,8 @@ SimpleUpdate()
     }
     else
     {
+        if(DebugLog)
+            msgbox,"Current version not found"
         return
         ;TODO: Add error log
     }
@@ -116,6 +125,8 @@ SimpleUpdate()
     }
     else
     {
+        if(DebugLog)
+            msgbox,"New version not found"
         return
         ;TODO: Add error log
     }
@@ -161,30 +172,10 @@ SimpleUpdate()
         return
     } 
 }
-CheckForUpdaterUpdates()
-{
-    DownloadLink := % "https://raw.githubusercontent.com/veskeli/AhkUpdater/main/version.txt"
-    newversion := GetNewVersionFromURL(DownloadLink)
-    if(newversion == "ERROR")
-        ExitApp
-    if(newversion > ThisScriptVersion)
-    {
-        if(SeemlesUpdate)
-        {
-            UpdateUpdater()
-        }
-        else
-        {
-            UpdateText := % "New updater version is: " . FileNewVersion . "`nOld is: " . FileVersionFile .  "`nUpdate now?"
-            MsgBox, 4,Update,%UpdateText% ;Ask user if we update
-            IfMsgBox, Yes ;If user pressed yes
-                UpdateUpdater()
-        }
-    } 
-}
 UpdateUpdater()
 {
-    
+    if(DebugLog)
+        msgbox,updating
     if(ThisScriptTempFileLocation == "")
     {
         FileMove, %A_ScriptFullPath%, %A_ScriptDir%\OldUpdater.ahk, 1
@@ -195,14 +186,17 @@ UpdateUpdater()
             FileCreateDir, %ThisScriptTempFileLocation%
         FileMove, %A_ScriptFullPath%, %ThisScriptTempFileLocation%\%A_ScriptName%.ahk, 1
     }
-    DownloadLink := % "https://raw.githubusercontent.com/veskeli/AhkUpdater/main/updater.ahk"
-    UrlDownloadToFile, %DownloadLink%, %A_ScriptFullPath%
+    DownloadFile := % "https://raw.githubusercontent.com/veskeli/AhkUpdater/main/updater.ahk"
+    UrlDownloadToFile,%DownloadFile%, %A_ScriptFullPath%
     ExitApp
 }
 GetNewVersionFromURL(Link)
 {
-    T_NewVersion := ReadFileFromLink(VersionLink)
-    if(T_NewVersion != "ERROR" and T_NewVersion != "" and T_NewVersion != "404: Not Found" and T_NewVersion != "500: Internal Server Error")
+    T_NewVersion := ReadFileFromLink(Link)
+    if(DebugLog)
+        msgbox,%T_NewVersion%
+    ;if(T_NewVersion != "ERROR" and T_NewVersion != "" and T_NewVersion != "404: Not Found" and T_NewVersion != "500: Internal Server Error")
+    if(T_NewVersion is digit)
     {
         Return T_NewVersion
     }
@@ -219,13 +213,13 @@ ReadFileFromLink(Link)
         whr.Open("GET", Link, False)
         whr.Send()
         whr.WaitForResponse()
-        TResponse := whr.ResponseText
+        Response := whr.ResponseText
     }
     Catch T_Error
     {
         return "ERROR"
     }
-    return TResponse
+    return Response
 }
 UpdateSettings()
 {
@@ -239,4 +233,15 @@ UpdateSettings()
     iniread, ShowErrorMsgbox,%SettingsFile%,Updater,ShowErrorMsgbox
     iniread, ErrorFileLocation,%SettingsFile%,Updater,ErrorFileLocation
     iniread, UseAdvancedSettings,%SettingsFile%,Updater,UseAdvancedSettings
+    iniread, DebugLog,%SettingsFile%,Updater,DebugLog
+    ;Fix bools
+    toBool(KeepThisUpToDate)
+    toBool(SeemlesUpdate)
+    toBool(DeleteOldFile)
+    toBool(ShowErrorMsgbox)
+    toBool(UseAdvancedSettings)
+    toBool(DebugLog)
+}
+toBool(v) {
+	return v = "true"
 }
